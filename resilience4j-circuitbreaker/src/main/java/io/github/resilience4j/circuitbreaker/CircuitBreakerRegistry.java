@@ -39,7 +39,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
     /**
      * Creates a CircuitBreakerRegistry with a custom default CircuitBreaker configuration.
-     *
+     * 使用默认配置 -> 创建注册中心
      * @param circuitBreakerConfig a custom default CircuitBreaker configuration
      * @return a CircuitBreakerRegistry with a custom CircuitBreaker configuration.
      */
@@ -50,7 +50,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Creates a CircuitBreakerRegistry with a custom default CircuitBreaker configuration and a
      * CircuitBreaker registry event consumer.
-     *
+     * 使用自定义配置作为默认配置 和 注册事件消费器 -> 创建注册中心
      * @param circuitBreakerConfig  a custom default CircuitBreaker configuration.
      * @param registryEventConsumer a CircuitBreaker registry event consumer.
      * @return a CircuitBreakerRegistry with a custom CircuitBreaker configuration and a
@@ -64,7 +64,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Creates a CircuitBreakerRegistry with a custom default CircuitBreaker configuration and a
      * list of CircuitBreaker registry event consumers.
-     *
+     * 使用自定义配置作为默认配置 和 注册事件消费器列表 -> 创建注册中心
      * @param circuitBreakerConfig   a custom default CircuitBreaker configuration.
      * @param registryEventConsumers a list of CircuitBreaker registry event consumers.
      * @return a CircuitBreakerRegistry with a custom CircuitBreaker configuration and list of
@@ -77,7 +77,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
     /**
      * Creates a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations.
-     *
+     * 使用自定义配置map作为共享配置 -> 创建注册中心
      * @param configs a Map of shared CircuitBreaker configurations
      * @return a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations.
      */
@@ -89,7 +89,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
      * Creates a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations.
      * <p>
      * Tags added to the registry will be added to every instance created by this registry.
-     *
+     * 使用自定义配置map作为共享配置 和 标签 -> 创建注册中心 （标签会作为注册中心的属性）
      * @param configs a Map of shared CircuitBreaker configurations
      * @param tags    default tags to add to the registry
      * @return a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations.
@@ -102,7 +102,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Creates a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations and a
      * CircuitBreaker registry event consumer.
-     *
+     * 使用自定义配置map作为共享配置 和 事件消费器 -> 创建注册中心
      * @param configs               a Map of shared CircuitBreaker configurations.
      * @param registryEventConsumer a CircuitBreaker registry event consumer.
      * @return a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations and a
@@ -116,7 +116,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Creates a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations and a
      * CircuitBreaker registry event consumer.
-     *
+     * 使用自定义配置map作为共享配置、 事件消费器 和 标签 -> 创建注册中心
      * @param configs               a Map of shared CircuitBreaker configurations.
      * @param registryEventConsumer a CircuitBreaker registry event consumer.
      * @param tags                  default tags to add to the registry
@@ -133,7 +133,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Creates a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations and a
      * list of CircuitBreaker registry event consumers.
-     *
+     * 使用自定义配置map作为共享配置 和 事件消费器列表 -> 创建注册中心
      * @param configs                a Map of shared CircuitBreaker configurations.
      * @param registryEventConsumers a list of CircuitBreaker registry event consumers.
      * @return a CircuitBreakerRegistry with a Map of shared CircuitBreaker configurations and a
@@ -146,7 +146,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
     /**
      * Creates a CircuitBreakerRegistry with a default CircuitBreaker configuration.
-     *
+     * 使用默认配置 -> 创建注册中心
      * @return a CircuitBreakerRegistry with a default CircuitBreaker configuration.
      */
     static CircuitBreakerRegistry ofDefaults() {
@@ -155,7 +155,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
     /**
      * Returns all managed {@link CircuitBreaker} instances.
-     *
+     * 返回所有注册中心管理的熔断器
      * @return all managed {@link CircuitBreaker} instances.
      */
     Seq<CircuitBreaker> getAllCircuitBreakers();
@@ -163,7 +163,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Returns a managed {@link CircuitBreaker} or creates a new one with the default CircuitBreaker
      * configuration.
-     *
+     * 创建或者返回注册中心管理的熔断器（创建的话，会使用默认的配置）
      * @param name the name of the CircuitBreaker
      * @return The {@link CircuitBreaker}
      */
@@ -172,6 +172,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Returns a managed {@link CircuitBreaker} or creates a new one with the default CircuitBreaker
      * configuration.
+     * 创建或者返回注册中心管理的熔断器。（如果注册中心已经带有tags了，方法的tags会和注册中心的合并，tags的key冲突时，以方法入参为主）
      * <p>
      * The {@code tags} passed will be appended to the tags already configured for the registry.
      * When tags (keys) of the two collide the tags passed with this method will override the tags
@@ -186,7 +187,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Returns a managed {@link CircuitBreaker} or creates a new one with a custom CircuitBreaker
      * configuration.
-     *
+     * 创建或者返回注册中心管理的熔断器（熔断器配置按传入配置）
      * @param name   the name of the CircuitBreaker
      * @param config a custom CircuitBreaker configuration
      * @return The {@link CircuitBreaker}
@@ -196,6 +197,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Returns a managed {@link CircuitBreaker} or creates a new one with a custom CircuitBreaker
      * configuration.
+     * 创建或者返回注册中心管理的熔断器（熔断器配置按传入配置，tags合并）
      * <p>
      * The {@code tags} passed will be appended to the tags already configured for the registry.
      * When tags (keys) of the two collide the tags passed with this method will override the tags
@@ -212,7 +214,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Returns a managed {@link CircuitBreaker} or creates a new one.
      * The configuration must have been added upfront via {@link #addConfiguration(String, Object)}.
-     *
+     * 创建或者返回注册中心管理的熔断器（按配置名查找对应的配置）
      * @param name       the name of the CircuitBreaker
      * @param configName the name of the shared configuration
      * @return The {@link CircuitBreaker}
@@ -226,7 +228,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
      * The {@code tags} passed will be appended to the tags already configured for the registry.
      * When tags (keys) of the two collide the tags passed with this method will override the tags
      * of the registry.
-     *
+     * 创建或者返回注册中心管理的熔断器（按配置名查找对应的配置，tags合并）
      * @param name       the name of the CircuitBreaker
      * @param configName the name of the shared configuration
      * @param tags       tags added to the CircuitBreaker
@@ -238,7 +240,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
     /**
      * Returns a managed {@link CircuitBreaker} or creates a new one with a custom CircuitBreaker
      * configuration.
-     *
+     * 创建或者返回注册中心管理的熔断器（配置以lambda形式延迟创建）
      * @param name                         the name of the CircuitBreaker
      * @param circuitBreakerConfigSupplier a supplier of a custom CircuitBreaker configuration
      * @return The {@link CircuitBreaker}
@@ -253,7 +255,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
      * The {@code tags} passed will be appended to the tags already configured for the registry.
      * When tags (keys) of the two collide the tags passed with this method will override the tags
      * of the registry.
-     *
+     * 创建或者返回注册中心管理的熔断器（配置以lambda形式延迟创建，tags合并）
      * @param name                         the name of the CircuitBreaker
      * @param circuitBreakerConfigSupplier a supplier of a custom CircuitBreaker configuration
      * @param tags                         tags added to the CircuitBreaker
@@ -265,7 +267,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
     /**
      * Returns a builder to create a custom CircuitBreakerRegistry.
-     *
+     * 创建者模式，自定义创建注册中心
      * @return a {@link CircuitBreakerRegistry.Builder}
      */
     static Builder custom() {
@@ -285,6 +287,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
             this.registryEventConsumers = new ArrayList<>();
         }
 
+        // 设置注册中心的存储实体
         public Builder withRegistryStore(RegistryStore<CircuitBreaker> registryStore) {
             this.registryStore = registryStore;
             return this;
@@ -292,7 +295,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
         /**
          * Configures a CircuitBreakerRegistry with a custom default CircuitBreaker configuration.
-         *
+         * 设置熔断器的默认配置
          * @param circuitBreakerConfig a custom default CircuitBreaker configuration
          * @return a {@link CircuitBreakerRegistry.Builder}
          */
@@ -303,7 +306,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
         /**
          * Configures a CircuitBreakerRegistry with a custom CircuitBreaker configuration.
-         *
+         * 设置熔断器的配置（不允许配置default）
          * @param configName configName for a custom shared CircuitBreaker configuration
          * @param configuration a custom shared CircuitBreaker configuration
          * @return a {@link CircuitBreakerRegistry.Builder}
@@ -320,7 +323,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
         /**
          * Configures a CircuitBreakerRegistry with a CircuitBreaker registry event consumer.
-         *
+         * 配置注册事件消费器
          * @param registryEventConsumer a CircuitBreaker registry event consumer.
          * @return a {@link CircuitBreakerRegistry.Builder}
          */
@@ -333,7 +336,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
          * Configures a CircuitBreakerRegistry with Tags.
          * <p>
          * Tags added to the registry will be added to every instance created by this registry.
-         *
+         * 配置tags标签
          * @param tags default tags to add to the registry.
          * @return a {@link CircuitBreakerRegistry.Builder}
          */
@@ -344,7 +347,7 @@ public interface CircuitBreakerRegistry extends Registry<CircuitBreaker, Circuit
 
         /**
          * Builds a CircuitBreakerRegistry
-         *
+         * 实际上创建的是InMemoryCircuitBreakerRegistry的实例对象
          * @return the CircuitBreakerRegistry
          */
         public CircuitBreakerRegistry build() {
