@@ -38,25 +38,27 @@ public class CircuitBreakerConfig implements Serializable {
 
     private static final long serialVersionUID = -5429814941777001669L;
 
-    public static final int DEFAULT_FAILURE_RATE_THRESHOLD = 50; // Percentage
-    public static final int DEFAULT_SLOW_CALL_RATE_THRESHOLD = 100; // Percentage
-    public static final int DEFAULT_WAIT_DURATION_IN_OPEN_STATE = 60; // Seconds
-    public static final int DEFAULT_PERMITTED_CALLS_IN_HALF_OPEN_STATE = 10;
-    public static final int DEFAULT_MINIMUM_NUMBER_OF_CALLS = 100;
-    public static final int DEFAULT_SLIDING_WINDOW_SIZE = 100;
-    public static final int DEFAULT_SLOW_CALL_DURATION_THRESHOLD = 60; // Seconds
-    public static final int DEFAULT_WAIT_DURATION_IN_HALF_OPEN_STATE = 0; // Seconds. It is an optional parameter
-    public static final SlidingWindowType DEFAULT_SLIDING_WINDOW_TYPE = SlidingWindowType.COUNT_BASED;
-    public static final boolean DEFAULT_WRITABLE_STACK_TRACE_ENABLED = true;
-    private static final Predicate<Throwable> DEFAULT_RECORD_EXCEPTION_PREDICATE = throwable -> true;
-    private static final Predicate<Throwable> DEFAULT_IGNORE_EXCEPTION_PREDICATE = throwable -> false;
-    private static final Function<Clock, Long> DEFAULT_TIMESTAMP_FUNCTION = clock -> System.nanoTime();
-    private static final TimeUnit DEFAULT_TIMESTAMP_UNIT = TimeUnit.NANOSECONDS;
+    // 所有默认值
+    public static final int DEFAULT_FAILURE_RATE_THRESHOLD = 50; // Percentage 默认失败率阈值
+    public static final int DEFAULT_SLOW_CALL_RATE_THRESHOLD = 100; // Percentage 默认超时率阈值
+    public static final int DEFAULT_WAIT_DURATION_IN_OPEN_STATE = 60; // Seconds 默认熔断器打开时的等待时间 open -> half open
+    public static final int DEFAULT_PERMITTED_CALLS_IN_HALF_OPEN_STATE = 10; // 打开状态下的默认请求通过数，多出执行降级策略
+    public static final int DEFAULT_MINIMUM_NUMBER_OF_CALLS = 100; // 统计指标数据的最低请求数
+    public static final int DEFAULT_SLIDING_WINDOW_SIZE = 100; // 滑动窗口大小
+    public static final int DEFAULT_SLOW_CALL_DURATION_THRESHOLD = 60; // Seconds 超时阈值
+    public static final int DEFAULT_WAIT_DURATION_IN_HALF_OPEN_STATE = 0; // Seconds. It is an optional parameter 半开状态下的最大等待时间，超时恢复到打开状态
+    public static final SlidingWindowType DEFAULT_SLIDING_WINDOW_TYPE = SlidingWindowType.COUNT_BASED; // 滑动窗口的类型
+    public static final boolean DEFAULT_WRITABLE_STACK_TRACE_ENABLED = true;    // ??TODO
+    private static final Predicate<Throwable> DEFAULT_RECORD_EXCEPTION_PREDICATE = throwable -> true;   //
+    private static final Predicate<Throwable> DEFAULT_IGNORE_EXCEPTION_PREDICATE = throwable -> false;  // 默认不忽略所有的异常
+    private static final Function<Clock, Long> DEFAULT_TIMESTAMP_FUNCTION = clock -> System.nanoTime(); // 读取当前时间戳
+    private static final TimeUnit DEFAULT_TIMESTAMP_UNIT = TimeUnit.NANOSECONDS;    // 时间戳的单位
     private static final Predicate<Object> DEFAULT_RECORD_RESULT_PREDICATE = (Object object) -> false;
+
     // The default exception predicate counts all exceptions as failures.
-    private Predicate<Throwable> recordExceptionPredicate = DEFAULT_RECORD_EXCEPTION_PREDICATE;
+    private Predicate<Throwable> recordExceptionPredicate = DEFAULT_RECORD_EXCEPTION_PREDICATE;     // 断言：异常是否要记录
     // The default exception predicate ignores no exceptions.
-    private Predicate<Throwable> ignoreExceptionPredicate = DEFAULT_IGNORE_EXCEPTION_PREDICATE;
+    private Predicate<Throwable> ignoreExceptionPredicate = DEFAULT_IGNORE_EXCEPTION_PREDICATE;     // 断言：异常是否要忽略 （异常即不要忽略，也不要记录的，请求认为是正常请求）
     private Function<Clock, Long> currentTimestampFunction = DEFAULT_TIMESTAMP_FUNCTION;
     private TimeUnit timestampUnit = DEFAULT_TIMESTAMP_UNIT;
 
@@ -73,7 +75,7 @@ public class CircuitBreakerConfig implements Serializable {
     private SlidingWindowType slidingWindowType = DEFAULT_SLIDING_WINDOW_TYPE;
     private int minimumNumberOfCalls = DEFAULT_MINIMUM_NUMBER_OF_CALLS;
     private boolean writableStackTraceEnabled = DEFAULT_WRITABLE_STACK_TRACE_ENABLED;
-    private boolean automaticTransitionFromOpenToHalfOpenEnabled = false;
+    private boolean automaticTransitionFromOpenToHalfOpenEnabled = false;  // 自动从open状态转换为half open状态的开关
     private IntervalFunction waitIntervalFunctionInOpenState = IntervalFunction
         .of(Duration.ofSeconds(DEFAULT_WAIT_DURATION_IN_OPEN_STATE));
     private float slowCallRateThreshold = DEFAULT_SLOW_CALL_RATE_THRESHOLD;
@@ -87,6 +89,7 @@ public class CircuitBreakerConfig implements Serializable {
 
     /**
      * Returns a builder to create a custom CircuitBreakerConfig.
+     * 创建者模式
      *
      * @return a {@link Builder}
      */
@@ -97,7 +100,7 @@ public class CircuitBreakerConfig implements Serializable {
     /**
      * Returns a builder to create a custom CircuitBreakerConfig based on another
      * CircuitBreakerConfig.
-     *
+     * 从已有配置中创建构建器
      * @return a {@link Builder}
      */
     public static Builder from(CircuitBreakerConfig baseConfig) {
@@ -106,7 +109,7 @@ public class CircuitBreakerConfig implements Serializable {
 
     /**
      * Creates a default CircuitBreaker configuration.
-     *
+     * 创建默认配置的CircuitBreaker
      * @return a default CircuitBreaker configuration.
      */
     public static CircuitBreakerConfig ofDefaults() {
@@ -641,6 +644,8 @@ public class CircuitBreakerConfig implements Serializable {
          * The Predicate must return false, if the result should count
          * as a success.
          *
+         * 可以根据返回结果来判断本次请求是否该记录为失败，比如接口返回-1的，属于接口异常的，其实可以记为异常。
+         *
          * @param predicate the Predicate which evaluates if a result should count as a failure
          * @return the CircuitBreakerConfig.Builder
          */
@@ -653,7 +658,7 @@ public class CircuitBreakerConfig implements Serializable {
          * Configures a Predicate which evaluates if an exception should be ignored and neither
          * count as a failure nor success. The Predicate must return true if the exception should be
          * ignored. The Predicate must return false, if the exception should count as a failure.
-         *
+         * 判断异常是否可以忽略
          * @param predicate the Predicate which evaluates if an exception should count as a failure
          * @return the CircuitBreakerConfig.Builder
          */
@@ -769,6 +774,7 @@ public class CircuitBreakerConfig implements Serializable {
             return config;
         }
 
+        // 兼容考虑
         private Predicate<Throwable> createIgnoreFailurePredicate() {
             return PredicateCreator.createExceptionsPredicate(ignoreExceptions)
                 .map(predicate -> ignoreExceptionPredicate != null ? predicate
@@ -778,6 +784,8 @@ public class CircuitBreakerConfig implements Serializable {
         }
 
         private Predicate<Throwable> createRecordExceptionPredicate() {
+            // 使用exception创建predicate，如果predicate已经存在，那么合并两个predicate。
+            // 如果本身没有exception，则直接返回已有的predicate。
             return PredicateCreator.createExceptionsPredicate(recordExceptions)
                 .map(predicate -> recordExceptionPredicate != null ? predicate
                     .or(recordExceptionPredicate) : predicate)
