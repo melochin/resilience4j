@@ -133,9 +133,11 @@ public class RetryImpl<T> implements Retry {
     }
 
     public final class ContextImpl implements Retry.Context<T> {
-
+        // 尝试次数
         private final AtomicInteger numOfAttempts = new AtomicInteger(0);
+        // 上次异常
         private final AtomicReference<Exception> lastException = new AtomicReference<>();
+        // 上次运行时异常
         private final AtomicReference<RuntimeException> lastRuntimeException = new AtomicReference<>();
 
         private ContextImpl() {
@@ -152,15 +154,22 @@ public class RetryImpl<T> implements Retry {
 
         @Override
         public void onComplete() {
+            // 获得当前尝试次数
             int currentNumOfAttempts = numOfAttempts.get();
+            // 如果有一定尝试次数 且 没有超过上限
             if (currentNumOfAttempts > 0 && currentNumOfAttempts < maxAttempts) {
+                // 统计尝试后成功执行次数
                 succeededAfterRetryCounter.increment();
+                // 如果最近有一次异常
                 Throwable throwable = Option.of(lastException.get())
                     .getOrElse(lastRuntimeException.get());
+                // 发布事件 - retry name, 总共尝试次数， 最近一次异常
                 publishRetryEvent(
                     () -> new RetryOnSuccessEvent(getName(), currentNumOfAttempts, throwable));
             } else {
+                // 如果超过上限
                 if (currentNumOfAttempts >= maxAttempts) {
+                    // 统计尝试后的失败执行次数
                     failedAfterRetryCounter.increment();
                     Throwable throwable = Option.of(lastException.get())
                         .orElse(Option.of(lastRuntimeException.get()))
@@ -169,11 +178,13 @@ public class RetryImpl<T> implements Retry {
                             "max retries is reached out for the result predicate check"
                         ));
                     publishRetryEvent(() -> new RetryOnErrorEvent(name, currentNumOfAttempts, throwable));
-
+                    // 达到最大上限
                     if (failAfterMaxAttempts) {
                         throw MaxRetriesExceededException.createMaxRetriesExceededException(RetryImpl.this);
                     }
                 } else {
+                    // 没有超过上限，并且没有尝试过 （一次过）
+                    // 统计没有重试的成功次数
                     succeededWithoutRetryCounter.increment();
                 }
             }
@@ -181,15 +192,19 @@ public class RetryImpl<T> implements Retry {
 
         @Override
         public boolean onResult(T result) {
+            // 根据函数返回结果，判断是否需要重试
             if (null != resultPredicate && resultPredicate.test(result)) {
                 int currentNumOfAttempts = numOfAttempts.incrementAndGet();
+                // 达到上限次数，不能重试
                 if (currentNumOfAttempts >= maxAttempts) {
                     return false;
                 } else {
+                    // 未达到上限次数，等待一会重试
                     waitIntervalAfterFailure(currentNumOfAttempts, Either.right(result));
                     return true;
                 }
             }
+            // 不能重试
             return false;
         }
 
@@ -207,11 +222,16 @@ public class RetryImpl<T> implements Retry {
 
         @Override
         public void onRuntimeError(RuntimeException runtimeException) {
+            // 判断是否有运行时异常
             if (exceptionPredicate.test(runtimeException)) {
+                // 存在运行时异常
                 lastRuntimeException.set(runtimeException);
+                // 抛出运行时异常或者睡眠一下
                 throwOrSleepAfterRuntimeException();
             } else {
+                // 不可预料的异常，try没有异常发生失败
                 failedWithoutRetryCounter.increment();
+                // 发布事件
                 publishRetryEvent(() -> new RetryOnIgnoredErrorEvent(getName(), runtimeException));
                 throw runtimeException;
             }
@@ -233,12 +253,14 @@ public class RetryImpl<T> implements Retry {
         private void throwOrSleepAfterRuntimeException() {
             int currentNumOfAttempts = numOfAttempts.incrementAndGet();
             RuntimeException throwable = lastRuntimeException.get();
+            // 如果达到上线，抛出异常
             if (currentNumOfAttempts >= maxAttempts) {
                 failedAfterRetryCounter.increment();
                 publishRetryEvent(
                     () -> new RetryOnErrorEvent(getName(), currentNumOfAttempts, throwable));
                 throw throwable;
             } else {
+                // 等待一会
                 waitIntervalAfterFailure(currentNumOfAttempts, Either.left(throwable));
             }
         }

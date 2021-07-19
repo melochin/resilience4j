@@ -211,8 +211,11 @@ public interface Retry {
             do {
                 try {
                     T result = supplier.get();
+                    // 需要重试？
                     final boolean validationOfResult = context.onResult(result);
+                    // 不需要重试，返回结果
                     if (!validationOfResult) {
+                        // 判断是否需要抛出异常
                         context.onComplete();
                         return result;
                     }
