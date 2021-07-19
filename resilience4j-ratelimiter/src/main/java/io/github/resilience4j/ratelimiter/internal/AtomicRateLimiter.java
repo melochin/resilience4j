@@ -91,9 +91,11 @@ public class AtomicRateLimiter implements RateLimiter {
      */
     @Override
     public void changeLimitForPeriod(final int limitForPeriod) {
+        // 创建新的config
         RateLimiterConfig newConfig = RateLimiterConfig.from(state.get().config)
             .limitForPeriod(limitForPeriod)
             .build();
+        // 更新config
         state.updateAndGet(currentState -> new State(
             newConfig, currentState.activeCycle, currentState.activePermissions,
             currentState.nanosToWait
@@ -116,6 +118,7 @@ public class AtomicRateLimiter implements RateLimiter {
      */
     @Override
     public boolean acquirePermission(final int permits) {
+        // 超时等待时间
         long timeoutInNanos = state.get().config.getTimeoutDuration().toNanos();
         State modifiedState = updateStateWithBackOff(permits, timeoutInNanos);
         boolean result = waitForPermissionIfNecessary(timeoutInNanos, modifiedState.nanosToWait);
@@ -216,16 +219,22 @@ public class AtomicRateLimiter implements RateLimiter {
      */
     private State calculateNextState(final int permits, final long timeoutInNanos,
                                      final State activeState) {
+        // 周期
         long cyclePeriodInNanos = activeState.config.getLimitRefreshPeriod().toNanos();
+        // 周期内允许的次数
         int permissionsPerCycle = activeState.config.getLimitForPeriod();
 
+        // 当前时间
         long currentNanos = currentNanoTime();
+        // 当前环
         long currentCycle = currentNanos / cyclePeriodInNanos;
 
         long nextCycle = activeState.activeCycle;
         int nextPermissions = activeState.activePermissions;
         if (nextCycle != currentCycle) {
+            // 计算已经经过的环数
             long elapsedCycles = currentCycle - nextCycle;
+            // 统计累加的permission
             long accumulatedPermissions = elapsedCycles * permissionsPerCycle;
             nextCycle = currentCycle;
             nextPermissions = (int) min(nextPermissions + accumulatedPermissions,
@@ -255,13 +264,18 @@ public class AtomicRateLimiter implements RateLimiter {
     private long nanosToWaitForPermission(final int permits, final long cyclePeriodInNanos,
                                           final int permissionsPerCycle,
                                           final int availablePermissions, final long currentNanos, final long currentCycle) {
+        // 如果当前有可用的permits，不需要等待
         if (availablePermissions >= permits) {
             return 0L;
         }
+        //
         long nextCycleTimeInNanos = (currentCycle + 1) * cyclePeriodInNanos;
         long nanosToNextCycle = nextCycleTimeInNanos - currentNanos;
+        // 到下一环，累计的permits
         int permissionsAtTheStartOfNextCycle = availablePermissions + permissionsPerCycle;
+        // 还需要的permits，如果是正数，则fullCyclesToWait = 0 ，直接等到下一轮时间
         int fullCyclesToWait = divCeil(-(permissionsAtTheStartOfNextCycle - permits), permissionsPerCycle);
+        // 计算最终的等待时间
         return (fullCyclesToWait * cyclePeriodInNanos) + nanosToNextCycle;
     }
 
@@ -294,6 +308,7 @@ public class AtomicRateLimiter implements RateLimiter {
         boolean canAcquireInTime = timeoutInNanos >= nanosToWait;
         int permissionsWithReservation = permissions;
         if (canAcquireInTime) {
+            // 可能会减到负数，预留了permits
             permissionsWithReservation -= permits;
         }
         return new State(config, cycle, permissionsWithReservation, nanosToWait);
@@ -319,6 +334,7 @@ public class AtomicRateLimiter implements RateLimiter {
         if (canAcquireInTime) {
             return waitForPermission(nanosToWait);
         }
+        // 疑问：等待了还return false？等待的意义在哪里？
         waitForPermission(timeoutInNanos);
         return false;
     }
